@@ -1,0 +1,27 @@
+plugins {
+    id 'application'
+}
+
+sourceCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.formdev:flatlaf:2.6'
+
+    testImplementation 'org.testng:testng:7.6.1'
+}
+
+application {
+    mainClass = 'stanio.diffview.App'
+}
+
+tasks.named('test') {
+    useTestNG()
+}
+
+tasks.withType(JavaCompile) {
+    options.release = 11
+}
