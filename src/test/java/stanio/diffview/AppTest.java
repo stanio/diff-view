@@ -10,9 +10,9 @@ import static org.testng.Assert.*;
 public class AppTest {
 
     @Test
-    public void appHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull(classUnderTest.getGreeting(), "app should have a greeting");
+    public void windowTitle() {
+        App window = new App();
+        assertEquals(window.getTitle(), "diff-view", "Window title");
     }
 
 }
