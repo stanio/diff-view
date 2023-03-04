@@ -1,27 +1,61 @@
 plugins {
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
 }
 
 sourceCompatibility = JavaVersion.VERSION_11
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'com.formdev:flatlaf:2.6'
-
-    testImplementation 'org.testng:testng:7.6.1'
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
 }
 
 application {
-    mainClass = 'stanio.diffview.App'
+    mainClass = 'stanio.diffview.DiffView'
+}
+
+jar {
+    manifest {
+        attributes("Main-Class": application.mainClass)
+    }
+}
+
+shadowJar {
+   archiveClassifier = 'exec'
+   archiveVersion = ''
+}
+
+tasks.withType(JavaCompile) {
+    options.release = 11
+}
+
+javadoc {
+    options.tags = [ 'todo:X',
+                     'apiNote:a:API Note:',
+                     'implSpec:a:Implementation Requirements:',
+                     'implNote:a:Implementation Note:' ]
+    options.memberLevel = JavadocMemberLevel.PACKAGE
+    options.addStringOption('-show-packages', 'all')
+    options.addBooleanOption('Xdoclint:-missing', true)
+    javadocTool = javaToolchains.javadocToolFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
 tasks.named('test') {
     useTestNG()
 }
 
-tasks.withType(JavaCompile) {
-    options.release = 11
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.formdev:flatlaf:3.0'
+
+    testImplementation 'org.hamcrest:hamcrest:2.2'
+    testImplementation 'org.mockito:mockito-core:4.9.0'
+    testImplementation 'org.testng:testng:7.6.1'
+    testRuntimeOnly    'org.slf4j:slf4j-simple:1.7.36'
 }
