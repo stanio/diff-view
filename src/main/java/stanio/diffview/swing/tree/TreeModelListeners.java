@@ -4,6 +4,7 @@
  */
 package stanio.diffview.swing.tree;
 
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
@@ -13,7 +14,15 @@ import javax.swing.event.TreeModelListener;
 
 public class TreeModelListeners {
 
-    private EventListenerList listenerList = new EventListenerList();
+    private EventListenerList listenerList;
+
+    public TreeModelListeners() {
+        this(new EventListenerList());
+    }
+
+    public TreeModelListeners(EventListenerList listenerList) {
+        this.listenerList = Objects.requireNonNull(listenerList);
+    }
 
     public void add(TreeModelListener listener) {
         listenerList.add(TreeModelListener.class, listener);
@@ -25,6 +34,12 @@ public class TreeModelListeners {
 
     public void notify(BiConsumer<TreeModelListener, TreeModelEvent> dispatcher,
                        Supplier<TreeModelEvent> eventSupplier) {
+        notify(listenerList, dispatcher, eventSupplier);
+    }
+
+    public static void notify(EventListenerList listenerList,
+            BiConsumer<TreeModelListener, TreeModelEvent> dispatcher,
+            Supplier<TreeModelEvent> eventSupplier) {
         Object[] listeners = listenerList.getListenerList();
         TreeModelEvent event = null;
 

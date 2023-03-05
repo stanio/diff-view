@@ -17,7 +17,7 @@ application {
 
 jar {
     manifest {
-        attributes("Main-Class": application.mainClass)
+        attributes('Main-Class': application.mainClass)
     }
 }
 
@@ -52,10 +52,10 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.formdev:flatlaf:3.0'
+    implementation group: 'com.formdev', name: 'flatlaf', version: '3.0'
 
-    testImplementation 'org.hamcrest:hamcrest:2.2'
-    testImplementation 'org.mockito:mockito-core:4.9.0'
-    testImplementation 'org.testng:testng:7.6.1'
-    testRuntimeOnly    'org.slf4j:slf4j-simple:1.7.36'
+    testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '4.9.0'
+    testImplementation group: 'org.testng', name: 'testng', version: '7.6.1'
+    testRuntimeOnly    group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.36'
 }
