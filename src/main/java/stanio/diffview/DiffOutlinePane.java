@@ -145,7 +145,8 @@ class DiffOutlinePane extends JPanel {
 
         tree.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent event) {
-                if (event.getClickCount() == 2) {
+                if (event.getButton() == MouseEvent.BUTTON1
+                        && event.getClickCount() == 2) {
                     TreePath path = tree.getUI().getClosestPathForLocation(tree, event.getX(), event.getY());
                     if (path == null) return;
 
