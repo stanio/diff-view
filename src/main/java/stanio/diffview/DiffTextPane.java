@@ -57,7 +57,13 @@ class DiffTextPane extends JScrollPane {
         setUpTextPane();
         initRuler();
         super.setViewportView(diffPane);
-        initStickyHeader();
+        JLabel header = initStickyHeader();
+        diffPane.addPropertyChangeListener("font", event -> {
+            Font f = diffPane.getFont();
+            fromRuler.setFont(f);
+            toRuler.setFont(f);
+            header.setFont(f);
+        });
     }
 
     private void setUpTextPane() {
@@ -76,9 +82,6 @@ class DiffTextPane extends JScrollPane {
                 textPane.getCaret().setVisible(true);
             }
         });
-
-        //textPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 13));
-        textPane.setFont(new Font("Cascadia Mono PL", Font.PLAIN, 13));
     }
 
     private void initRuler() {
@@ -183,7 +186,7 @@ class DiffTextPane extends JScrollPane {
         throw new IllegalStateException("Could not find DiffView ancestor");
     }
 
-    private void initStickyHeader() {
+    private JLabel initStickyHeader() {
         JLabel context = new JLabel();
         context.setFont(diffPane.getFont());
         context.setForeground(Colors.withAlpha(context.getForeground(), 0.5f));
@@ -203,6 +206,7 @@ class DiffTextPane extends JScrollPane {
                         verticalScroll.getModel().setValue(p.y + (h1 - h0)));
             }
         });
+        return context;
     }
 
     private String findLastFile(int fromIndex) {

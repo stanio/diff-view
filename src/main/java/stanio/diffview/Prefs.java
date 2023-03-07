@@ -45,7 +45,21 @@ class Prefs {
         windowBounds = getBounds(saved, Key.windowBounds);
         windowState = saved.getInt(Key.windowState, -1);
         splitPosition = saved.getInt(Key.splitPosition, -1);
-        textFont = saved.get(Key.textFont, Font.MONOSPACED + "-13");
+        textFont = saved.get(Key.textFont, defaultFont());
+    }
+
+    private static String defaultFont() {
+        String[] fonts = { "Cascadia Mono",
+                           "Cascadia Mono PL",
+                           "Cascadia Code",
+                           "Cascadia Code PL" };
+        for (String name : fonts) {
+            Font font = new Font(name, Font.PLAIN, 13);
+            if (!font.getFamily().equals(Font.DIALOG)) {
+                return name + "-13";
+            }
+        }
+        return Font.MONOSPACED + "-13";
     }
 
     public static Prefs load() {

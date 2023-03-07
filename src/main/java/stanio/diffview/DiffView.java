@@ -163,9 +163,10 @@ public class DiffView extends JFrame {
         if (prefs.textFont != null) {
             f = Font.decode(prefs.textFont);
         }
-        if (f == null || (f.getFamily().equals(Font.DIALOG))) {
-                          //&& !family.equalsIgnoreCase(Font.DIALOG))) {
-            f = new Font(Font.MONOSPACED, Font.PLAIN, 13);
+        if (f == null || f.getFamily().equals(Font.DIALOG)
+                && !f.getName().equalsIgnoreCase(Font.DIALOG)) {
+            f = new Font(Font.MONOSPACED, Font.PLAIN,
+                         f == null ? 13 : f.getSize());
         }
         getDiffPane().diffPane.setFont(f);
     }
