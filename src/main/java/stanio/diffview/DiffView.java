@@ -36,6 +36,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JRootPane;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -231,7 +232,13 @@ public class DiffView extends JFrame {
             window.prefs = prefs;
             window.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-            Input input = resolveInput(args);
+            Input input;
+            try {
+                input = resolveInput(args, window);
+            } catch (InputException e) {
+                e.showMessage();
+                return;
+            }
             window.updateTitle(input);
             window.getDiffPane().load(input, () -> {
                 DiffOutlinePane outline = window.getOutlinePane();
@@ -280,31 +287,22 @@ public class DiffView extends JFrame {
         }
     }
 
-    static Input resolveInput(String[] args) {
-        if (args.length == 0 && System.console() == null) {
-            return new Input(fileEncoding(), new BufferedReader(
-                    new InputStreamReader(System.in, fileEncoding())));
-            //try {
-            //    return new InputStreamReader(DiffView.class
-            //            .getResource("sample.diff").openStream(), fileEncoding());
-            //} catch (IOException e) {
-            //    e.printStackTrace();
-            //    System.exit(1);
-            //}
-        } else if (args.length == 1) {
-            try {
-                return openStream(args[0]);
-            } catch (InvalidPathException | IOException e) {
-                JOptionPane.showMessageDialog(null,
-                        e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                System.exit(1);
+    static Input resolveInput(String[] args, Window parent) throws InputException {
+        try {
+            if (args.length == 0 && System.console() == null) {
+                return new Input(fileEncoding(), new BufferedReader(
+                        new InputStreamReader(System.in, fileEncoding())));
+            } else if (args.length == 1) {
+                    return openStream(args[0]);
             }
+        } catch (InvalidPathException | IOException e) {
+            throw new InputException(e.getClass().getSimpleName()
+                    .replaceFirst("Exception$", "") + ": " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE, 1);
         }
-        JOptionPane.showMessageDialog(null, new Object[] {
-                "diff-view <source>", "", "diff ... | diff-view" },
-                "Usage", JOptionPane.INFORMATION_MESSAGE);
-        System.exit(2);
-        throw new AssertionError("Execution past System.exit()");
+        throw new InputException(new Object[] {
+                    "diff-view <source>", "", "diff ... | diff-view" },
+                    "Usage", JOptionPane.INFORMATION_MESSAGE, 2);
     }
 
     @SuppressWarnings("resource")
@@ -346,17 +344,20 @@ public class DiffView extends JFrame {
         Charset charset;
         Reader stream;
 
-        Input(Charset charset, Reader stream) {
+        Input(Charset charset, Reader stream) throws IOException {
             this.charset = charset;
             this.stream = stream;
+            // Try to detect some errors early
+            stream.mark(4096);
+            stream.reset();
         }
 
-        Input(Path file, Charset charset, Reader stream) {
+        Input(Path file, Charset charset, Reader stream) throws IOException {
             this(charset, stream);
             this.file = file;
         }
 
-        Input(URL url, Charset charset, Reader stream) {
+        Input(URL url, Charset charset, Reader stream) throws IOException {
             this(charset, stream);
             this.url = url;
         }
@@ -364,4 +365,64 @@ public class DiffView extends JFrame {
     }
 
 
-}
+    private static class InputException extends Exception {
+
+        private final Object message;
+        private final String title;
+        private final int messageType;
+        private final int exitCode;
+
+        InputException(Object message, String title, int messageType, int exitCode) {
+            this.message = message;
+            this.title = title;
+            this.messageType = messageType;
+            this.exitCode = exitCode;
+        }
+
+        @Override
+        public InputException initCause(Throwable cause) {
+            return (InputException) super.initCause(cause);
+        }
+
+        void showMessage() {
+            JOptionPane messagePane = new JOptionPane(message, messageType);
+            JFrame window = new JFrame("diff-view - " + title);
+            window.setIconImages(Collections.singletonList(new AppIcon()));
+            window.getRootPane().setWindowDecorationStyle(styleFromMessageType());
+            window.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+            messagePane.addPropertyChangeListener("value", event -> {
+                window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
+                window.dispose();
+            });
+            window.addWindowListener(new WindowAdapter() {
+                @Override public void windowClosing(WindowEvent event) {
+                    System.exit(exitCode);
+                }
+            });
+            window.add(messagePane);
+            window.pack();
+            window.setResizable(false);
+            window.setLocationRelativeTo(null);
+            window.setVisible(true);
+        }
+
+        private int styleFromMessageType() {
+            switch (messageType) {
+            case JOptionPane.ERROR_MESSAGE:
+                return JRootPane.ERROR_DIALOG;
+            case JOptionPane.QUESTION_MESSAGE:
+                return JRootPane.QUESTION_DIALOG;
+            case JOptionPane.WARNING_MESSAGE:
+                return JRootPane.WARNING_DIALOG;
+            case JOptionPane.INFORMATION_MESSAGE:
+                return JRootPane.INFORMATION_DIALOG;
+            case JOptionPane.PLAIN_MESSAGE:
+            default:
+                return JRootPane.PLAIN_DIALOG;
+            }
+        }
+
+    } // class InputException
+
+
+} // class DiffView
