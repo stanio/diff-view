@@ -109,12 +109,12 @@ class FileTreeModel implements TreeModel {
         listeners.remove(listener);
     }
 
-    public void addPath(String path) {
-        addPath(parsePath(path));
-    }
-
     protected String[] parsePath(String path) {
         return path.split("/");
+    }
+
+    public void addPath(String path) {
+        addPath(parsePath(path));
     }
 
     public void addPath(String[] path) {
@@ -141,6 +141,50 @@ class FileTreeModel implements TreeModel {
             treePath = treePath.pathByAddingChild(child);
             current = child;
         }
+    }
+
+    public void removePath(String path) {
+        removePath(parsePath(path));
+    }
+
+    public void removePath(String[] path) {
+        Node current = root;
+        TreePath treePath = new TreePath(current);
+        for (int i = 0, len = path.length; i < len; i++) {
+            String name = path[i];
+            if (name.trim().isEmpty()) continue;
+
+            Node child = current.get(name);
+            if (child == null) return; // not found
+
+            treePath = treePath.pathByAddingChild(child);
+            current = child;
+        }
+
+        TreePath parentPath = treePath.getParentPath();
+        int index = -1;
+        while (parentPath != null) {
+            Node parent = (Node) parentPath.getLastPathComponent();
+            index = parent.children
+                    .indexOf(treePath.getLastPathComponent());
+            parent.children.remove(index);
+            if (parent.children.isEmpty()) {
+                treePath = parentPath;
+                parentPath = parentPath.getParentPath();
+            } else {
+                break;
+            }
+        }
+
+        if (loading) return;
+
+        TreePath p = parentPath;
+        int i = index;
+        Object node = treePath.getLastPathComponent();
+        listeners.notify(TreeModelListener::treeNodesRemoved,
+                () -> new TreeModelEvent(this, p,
+                                         new int[] { i },
+                                         new Object[] { node }));
     }
 
     public void startLoading() {

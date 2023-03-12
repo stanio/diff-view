@@ -2,48 +2,32 @@
  * This module, both source code and documentation,
  * is in the Public Domain, and comes with NO WARRANTY.
  */
-package stanio.diffview;
+package stanio.diffview.udiff;
 
-import static stanio.diffview.Colors.*;
+import static stanio.diffview.udiff.Colors.*;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.awt.Color;
 
 import javax.swing.UIManager;
+import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 import javax.swing.text.StyledDocument;
 
-class DiffStyles {
+import stanio.diffview.udiff.UDiffDocument.StyleName;
 
-    static interface Name {
-        String DELETED_LINE = "deleted-line";
-        String INSERTED_LINE = "inserted-line";
-        String DELETED_NUMBER = "deleted-number";
-        String INSERTED_NUMBER = "inserted-number";
-        String MESSAGE = "message-text";
-        String DIFF_COMMAND = "diff-command";
-        String FROM_FILE = "from-file";
-        String TO_FILE = "to-file";
-        String HUNK = "hunk";
-        String HUNK_LABEL = "hunk-label";
+public class DiffStyles {
+
+    public static StyleContext getDefault() {
+        StyleContext styles = new StyleContext();
+        addTo(new DefaultStyledDocument(styles));
+        return styles;
     }
 
-    public static void main(String[] args) throws Exception {
-        for (Object key : Collections
-                .list(UIManager.getLookAndFeel().getDefaults().keys())) {
-            Object value = UIManager.get(key);
-            if (value instanceof Color) {
-                System.out.println(key + "=#" + Integer
-                        .toHexString(((Color) value).getRGB()).toUpperCase());
-            }
-        }
-    }
-
-    static void addTo(StyledDocument context) {
-        addStylesOf(context, colorOf(229,  83,  75, 0.15f),
+    public static void addTo(StyledDocument document) {
+        addStylesOf(document, colorOf(229,  83,  75, 0.15f),
                              colorOf(229,  83,  75, 0.4f),
                              colorOf( 70, 149,  74, 0.15f),
                              colorOf( 70, 149,  74, 0.4f),
@@ -60,19 +44,19 @@ class DiffStyles {
                                     Color hunk,
                                     Color hunkTitle,
                                     Color diffCommand) {
-        addStyleTo(context, Name.INSERTED_NUMBER, Color.WHITE, additionHilite);
-        addStyleTo(context, Name.DELETED_NUMBER, Color.WHITE, deletionHilite);
-        addStyleTo(context, Name.INSERTED_LINE, null, addition);
-        addStyleTo(context, Name.DELETED_LINE, null, deletion);
+        addStyleTo(context, StyleName.INSERTED_NUMBER, Color.WHITE, additionHilite);
+        addStyleTo(context, StyleName.DELETED_NUMBER, Color.WHITE, deletionHilite);
+        addStyleTo(context, StyleName.INSERTED_LINE, null, addition);
+        addStyleTo(context, StyleName.DELETED_LINE, null, deletion);
 
         Color yellowHighlight = new Color(1f, 1f, 0, .05f);
-        addStyleTo(context, Name.FROM_FILE, new Color(deletionHilite.getRGB()), null);
-        addStyleTo(context, Name.TO_FILE, new Color(additionHilite.getRGB()), null);
-        addStyleTo(context, Name.DIFF_COMMAND, hunk, null);
-        addStyleTo(context, Name.HUNK, diffCommand, yellowHighlight);
+        addStyleTo(context, StyleName.FROM_FILE, new Color(deletionHilite.getRGB()), null);
+        addStyleTo(context, StyleName.TO_FILE, new Color(additionHilite.getRGB()), null);
+        addStyleTo(context, StyleName.DIFF_COMMAND, hunk, null);
+        addStyleTo(context, StyleName.HUNK, diffCommand, yellowHighlight);
         StyleConstants.setItalic(addStyleTo(context,
-                Name.HUNK_LABEL, UIManager.getColor("textInactiveText"), null), true);
-        addStyleTo(context, Name.MESSAGE, UIManager.getColor("textInactiveText"), null);
+                StyleName.HUNK_LABEL, UIManager.getColor("textInactiveText"), null), true);
+        addStyleTo(context, StyleName.MESSAGE, UIManager.getColor("textInactiveText"), null);
     }
 
     private static Style addStyleTo(StyledDocument context, String name, Color fg, Color bg) {
@@ -82,7 +66,11 @@ class DiffStyles {
         return style;
     }
 
-}
+    public static Color colorWithAlpha(Color color, float alpha) {
+        return Colors.withAlpha(color, alpha);
+    }
+
+} // class DiffStyles
 
 
 class Colors {
@@ -193,4 +181,4 @@ class Colors {
                 .toHexString(colorOfYCbCr(yCbCr).getRGB()).toUpperCase());
     }
 
-}
+} // class Colors

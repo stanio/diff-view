@@ -42,6 +42,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
+import stanio.diffview.swing.tree.Trees;
+
 /**
  * The main {@code diff-view} class, providing the application command-line
  * entry point.
@@ -107,13 +109,11 @@ public class DiffView extends JFrame {
     }
 
     private void initContent() {
-        DiffOutlinePane treeOutline = new DiffOutlinePane();
-        treeOutline.setName("File outline");
-
         DiffTextPane textViewer = new DiffTextPane();
         textViewer.setName("Diff text");
 
-        treeOutline.diffText = textViewer.diffPane;
+        DiffOutlinePane treeOutline = new DiffOutlinePane(textViewer.diffPane);
+        treeOutline.setName("File outline");
 
         JSplitPane splitPane = new JSplitPane(JSplitPane
                 .HORIZONTAL_SPLIT, true, treeOutline, textViewer);
@@ -233,7 +233,10 @@ public class DiffView extends JFrame {
 
             Input input = resolveInput(args);
             window.updateTitle(input);
-            window.getDiffPane().load(input);
+            window.getDiffPane().load(input, () -> {
+                DiffOutlinePane outline = window.getOutlinePane();
+                Trees.expandAll(outline.tree);
+            });
 
             window.applyPrefs(prefs);
             window.setVisible(true);

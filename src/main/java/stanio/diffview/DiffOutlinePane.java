@@ -4,7 +4,9 @@
  */
 package stanio.diffview;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,6 +34,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import javax.swing.text.Element;
 import javax.swing.text.JTextComponent;
 import javax.swing.tree.TreePath;
@@ -41,6 +44,7 @@ import stanio.diffview.swing.tree.FilteredTreeModel;
 import stanio.diffview.swing.tree.PathFoldingTreeModel;
 import stanio.diffview.swing.tree.PathFoldingTreeModel.Node;
 import stanio.diffview.swing.tree.Trees;
+import stanio.diffview.udiff.UDiffDocument.Attribute;
 
 @SuppressWarnings("serial")
 class DiffOutlinePane extends JPanel {
@@ -53,11 +57,12 @@ class DiffOutlinePane extends JPanel {
     private JTextField filterField;
     JTextComponent diffText;
 
-    public DiffOutlinePane() {
+    public DiffOutlinePane(JTextComponent diffText) {
         this.fileTree = new FileTreeModel();
         this.filteredTree = new FilteredTreeModel(fileTree);
         this.tree = new JTree(new PathFoldingTreeModel(filteredTree));
         this.filterField = new JTextField();
+        this.diffText = diffText;
         initUI();
     }
 
@@ -173,6 +178,8 @@ class DiffOutlinePane extends JPanel {
             @Override public void changedUpdate(DocumentEvent e) {/* */}
         });
 
+        diffText.getDocument().addDocumentListener(new DiffFilesListener());
+
         super.add(new JScrollPane(tree), BorderLayout.CENTER);
         super.add(filterField, BorderLayout.PAGE_START);
     }
@@ -191,7 +198,7 @@ class DiffOutlinePane extends JPanel {
         Rectangle2D rect = null;
         Element section = null;
         while (p != null) {
-            String fileAttr = (String) p.getAttributes().getAttribute("file");
+            String fileAttr = (String) p.getAttributes().getAttribute(Attribute.FILE);
             //System.out.println(p.getStartOffset() + ", " + p.getEndOffset() + ": " + fileAttr);
             try {
                 if (filePath.equals(fileAttr)) {
@@ -256,4 +263,46 @@ class DiffOutlinePane extends JPanel {
         };
     }
 
-}
+
+    class DiffFilesListener implements DocumentListener {
+
+        private Map<Element, String> paths = new HashMap<>();
+
+        @Override
+        public void insertUpdate(DocumentEvent event) {
+            updateFileTree(event);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent event) {
+            updateFileTree(event);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent event) {
+            updateFileTree(event);
+        }
+
+        private void updateFileTree(DocumentEvent event) {
+            Document source = event.getDocument();
+            if (source instanceof AbstractDocument) {
+                AbstractDocument document = (AbstractDocument) source;
+                Element paragraph = document.getParagraphElement(event.getOffset());
+                Object path = paragraph.getAttributes().getAttribute(Attribute.FILE);
+                if (path instanceof String) {
+                    String oldPath = paths.get(paragraph);
+                    if (path.equals(oldPath)) return;
+
+                    if (oldPath != null) {
+                        fileTree.removePath(oldPath);
+                    }
+                    fileTree.addPath(path.toString());
+                    paths.put(paragraph, path.toString());
+                }
+            }
+        }
+
+    } // class DiffFilesListener
+
+
+} // class DiffOutlinePane
