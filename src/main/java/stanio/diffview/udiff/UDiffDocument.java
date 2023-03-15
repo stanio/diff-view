@@ -6,7 +6,6 @@ package stanio.diffview.udiff;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Element;
 import javax.swing.text.StyleContext;
 
 /**
@@ -54,17 +53,10 @@ public class UDiffDocument extends DefaultStyledDocument {
 
 
     public enum Attribute {
-
         FILE,
         FROM_LINE,
-        TO_LINE;
-
-        public static int getLineNo(Element elem) {
-            Object lineNo = elem.getAttributes().getAttribute(FROM_LINE);
-            return (lineNo instanceof Integer) ? (int) lineNo : 0;
-        }
-
-    } // enum Attributes
+        TO_LINE
+    }
 
 
     public final class StyleName {

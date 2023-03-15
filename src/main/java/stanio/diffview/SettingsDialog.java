@@ -29,6 +29,9 @@ class SettingsDialog {
                 UIManager.setLookAndFeel(lookAndFeel);
                 SwingUtilities.updateComponentTreeUI(parent instanceof Window
                         ? parent : SwingUtilities.getWindowAncestor(parent));
+                SwingUtilities.updateComponentTreeUI(SwingUtilities
+                        .getWindowAncestor((Component) event.getSource()));
+                ((Component) event.getSource()).requestFocusInWindow();
             } catch (Exception e) {
                 e.printStackTrace();
             }

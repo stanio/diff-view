@@ -19,9 +19,12 @@ For larger diffs of many files I'm often missing an outline
 
 ## Work-in-progress
 
--   Fuzzy outline filter;
--   Word-diff highlighting;
 -   Side-by-side diff view;
+-   Fuzzy outline filter;
+-   Change type (added/deleted/modified/renamed) indicators in tree, or
+    elsewhere, f.e. diff view context header
+    -   This could include
+-   Word-diff highlighting;
 -   Ignore white space changes;
 -   Explore if [GraalVM](https://www.graalvm.org/) binaries could be small
     enough to be considered for distribution.

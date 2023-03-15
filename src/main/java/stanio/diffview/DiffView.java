@@ -38,6 +38,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JRootPane;
 import javax.swing.JSplitPane;
+import javax.swing.JToggleButton;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -58,12 +59,16 @@ public class DiffView extends JFrame {
 
     Prefs prefs;
 
+    DiffCardPane viewPane;
+
+    DiffOutlinePane outlinePane;
+
     DiffView() {
         super("diff-view");
         super.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         initAppIcon();
-        initMenuBar();
         initContent();
+        initMenuBar();
     }
 
     private void initAppIcon() {
@@ -106,18 +111,36 @@ public class DiffView extends JFrame {
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(viewMenu);
+
+        JToggleButton splitDiffButton = new JToggleButton();
+        splitDiffButton.setAction(new AbstractAction("<>") {
+            @Override public void actionPerformed(ActionEvent event) {
+                boolean split = splitDiffButton.isSelected();
+                viewPane.showSplit(split);
+                if ((event.getModifiers() & ActionEvent.MOUSE_EVENT_MASK) != 0) {
+                    viewPane.requestFocusInWindow();
+                }
+                splitDiffButton.setToolTipText(split ? "Unified View" : "Split View");
+            }
+        });
+        splitDiffButton.setToolTipText("Split View");
+        // https://www.formdev.com/flatlaf/components/button/#styling
+        splitDiffButton.putClientProperty("JButton.buttonType", "toolBarButton");
+        //menuBar.add(new JSeparator(SwingConstants.VERTICAL));
+        menuBar.add(splitDiffButton);
+
         super.setJMenuBar(menuBar);
     }
 
     private void initContent() {
-        DiffTextPane textViewer = new DiffTextPane();
-        textViewer.setName("Diff text");
+        viewPane = new DiffCardPane();
+        viewPane.setName("Diff text");
 
-        DiffOutlinePane treeOutline = new DiffOutlinePane(textViewer.diffPane);
-        treeOutline.setName("File outline");
+        outlinePane = new DiffOutlinePane(viewPane.unifiedPane.diffPane);
+        outlinePane.setName("File outline");
 
         JSplitPane splitPane = new JSplitPane(JSplitPane
-                .HORIZONTAL_SPLIT, true, treeOutline, textViewer);
+                .HORIZONTAL_SPLIT, true, outlinePane, viewPane);
         //splitPane.setOneTouchExpandable(true);
         super.add(splitPane);
     }
@@ -127,11 +150,11 @@ public class DiffView extends JFrame {
     }
 
     DiffTextPane getDiffPane() {
-        return (DiffTextPane) getSplitPane().getRightComponent();
+        return viewPane.unifiedPane;
     }
 
     DiffOutlinePane getOutlinePane() {
-        return (DiffOutlinePane) getSplitPane().getLeftComponent();
+        return outlinePane;
     }
 
     void updateTitle(Input input) {
@@ -247,6 +270,7 @@ public class DiffView extends JFrame {
 
             window.applyPrefs(prefs);
             window.setVisible(true);
+            window.viewPane.requestFocusInWindow();
 
             window.addWindowListener(new WindowAdapter() {
                 @Override public void windowClosing(WindowEvent event) {

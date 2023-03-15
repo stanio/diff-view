@@ -13,6 +13,7 @@ import java.util.concurrent.TimeoutException;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.Point;
@@ -31,6 +32,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -84,12 +86,13 @@ class DiffTextPane extends JScrollPane {
         Color bg = textPane.getBackground();
         Color fg = textPane.getForeground();
         textPane.setEditable(false);
-        textPane.setBackground(new Color(bg.getRGB()));
-        textPane.setForeground(new Color(fg.getRGB()));
+        textPane.setBackground(new ColorUIResource(bg.getRGB()));
+        textPane.setForeground(new ColorUIResource(fg.getRGB()));
 
         textPane.addFocusListener(new FocusAdapter() {
             @Override public void focusGained(FocusEvent e) {
                 textPane.getCaret().setVisible(true);
+                textPane.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
             }
         });
     }
@@ -124,9 +127,26 @@ class DiffTextPane extends JScrollPane {
                 new DiffNumbersListener((AbstractDocument) numbers, lineAttr));
 
         // Prevent ruler from automatic scroll
-        lineRuler.addCaretListener(event -> lineRuler.setCaretPosition(0));
+        lineRuler.addCaretListener(event -> {
+            if (lineRuler.getCaretPosition() > 0)
+                lineRuler.setCaretPosition(0);
+        });
 
         DiffStyles.addTo(numbers);
+    }
+
+    @Override
+    public void updateUI() {
+        super.updateUI();
+        if (diffPane != null) {
+            JTextPane textPane = diffPane;
+            JTextPane editable = new JTextPane();
+            Color bg = editable.getBackground();
+            Color fg = editable.getForeground();
+            textPane.setEditable(false);
+            textPane.setBackground(new Color(bg.getRGB()));
+            textPane.setForeground(new Color(fg.getRGB()));
+        }
     }
 
     private SwingWorker<Void, Void> loader;
@@ -292,7 +312,7 @@ class DiffTextPane extends JScrollPane {
         private synchronized void updateRuler() throws BadLocationException {
             int lineCount = ruler.getDefaultRootElement().getElementCount();
             int lineNo = doc.getDefaultRootElement().getElementIndex(end - 1);
-            for (int i = lineCount; i < lineNo; i++) {
+            for (int i = lineCount; i <= lineNo; i++) {
                 ruler.insertString(ruler.getLength(), "\n", null);
             }
 

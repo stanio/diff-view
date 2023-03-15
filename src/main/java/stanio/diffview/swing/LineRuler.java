@@ -86,7 +86,7 @@ public class LineRuler extends NowrapTextPane {
     private void resetUI() {
         setEditable(false);
         setFocusable(false);
-        putClientProperty("caretWidth", 0);
+        putClientProperty("caretWidth", 0); // see DefaultCaret
 
         Color bg = UIManager.getColor("Panel.background");
         if (bg != null) setBackground(bg);
@@ -184,7 +184,7 @@ public class LineRuler extends NowrapTextPane {
         }
 
         private void debugEvent(DocumentEvent e) {
-            System.out.append("<> ").println(e);
+            //System.out.append("<> ").println(e);
         }
 
     } // class TextComponentListener

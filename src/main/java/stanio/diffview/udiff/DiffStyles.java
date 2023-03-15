@@ -20,10 +20,14 @@ import stanio.diffview.udiff.UDiffDocument.StyleName;
 
 public class DiffStyles {
 
-    public static StyleContext getDefault() {
-        StyleContext styles = new StyleContext();
-        addTo(new DefaultStyledDocument(styles));
-        return styles;
+    private static StyleContext defaultContext;
+
+    public synchronized static StyleContext getDefault() {
+        if (defaultContext == null) {
+            defaultContext = new StyleContext();
+            addTo(new DefaultStyledDocument(defaultContext));
+        }
+        return defaultContext;
     }
 
     public static void addTo(StyledDocument document) {

@@ -135,7 +135,7 @@ class AppIcon extends AbstractMultiResolutionImage implements Icon {
     }
 
     private static Color getColor(Component c) {
-        return (c == null ? new JPanel() : c).getForeground();
+        return (c == null ? new JPanel(null, false) : c).getForeground();
     }
 
     @Override

@@ -14,6 +14,9 @@ import java.util.Objects;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
+/**
+ * Not thread-safe.  Should be accessed only on the EDT.
+ */
 class PathFoldingTreeNode implements PathFoldingTreeModel.Node {
 
     private static final
