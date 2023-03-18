@@ -10,23 +10,20 @@ import java.awt.LayoutManager;
 import javax.swing.JPanel;
 
 /**
- * Simple split pane.  Allocates equal width to the left and right components,
- * no resizing.
+ * Allocates equal width to the left and right components, no resizing.
  *
  * @param  L  the type of the left component
  * @param  R  the type of the right component
- *
- * @see  javax.swing.JSplitPane
  */
 @SuppressWarnings("serial")
-class SimpleSplitPane<L extends Component, R extends Component> extends JPanel {
+class FixedSplitPane<L extends Component, R extends Component> extends JPanel {
 
     L leftComponent;
     R rightComponent;
 
     int gapSize;
 
-    public SimpleSplitPane() {
+    public FixedSplitPane() {
         //super();
     }
 
@@ -58,6 +55,7 @@ class SimpleSplitPane<L extends Component, R extends Component> extends JPanel {
         if (layout instanceof GridLayout) {
             ((GridLayout) layout).setHgap(gapSize);
             ((GridLayout) layout).setVgap(gapSize);
+            updateLayout();
         }
     }
 

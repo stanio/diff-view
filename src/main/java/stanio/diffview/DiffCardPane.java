@@ -39,14 +39,14 @@ class DiffCardPane extends JPanel {
 
     DiffTextPane unifiedPane;
 
-    SimpleSplitPane<JScrollPane, JScrollPane> splitPane;
+    FixedSplitPane<JScrollPane, JScrollPane> splitPane;
 
     private boolean splitPaneInitialized;
 
     public DiffCardPane() {
         super();
         unifiedPane = new DiffTextPane();
-        splitPane = new SimpleSplitPane<>();
+        splitPane = new FixedSplitPane<>();
         splitPane.addComponentListener(new ComponentAdapter() {
             @Override public void componentShown(ComponentEvent event) {
                 initSplitPane();

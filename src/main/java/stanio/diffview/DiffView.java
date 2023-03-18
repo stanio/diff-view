@@ -81,7 +81,7 @@ public class DiffView extends JFrame {
     }
 
     private void initMenuBar() {
-        JMenu viewMenu = new JMenu("File");
+        JMenu viewMenu = new JMenu("View");
         viewMenu.setMnemonic(KeyEvent.VK_F);
         viewMenu.add(new JMenuItem(new AbstractAction("Settings...") {
             {
@@ -112,6 +112,8 @@ public class DiffView extends JFrame {
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(viewMenu);
 
+        //JToolBar toolBar = new JToolBar();
+        //toolBar.setFloatable(false);
         JToggleButton splitDiffButton = new JToggleButton();
         splitDiffButton.setAction(new AbstractAction("<>") {
             @Override public void actionPerformed(ActionEvent event) {
@@ -120,13 +122,13 @@ public class DiffView extends JFrame {
                 if ((event.getModifiers() & ActionEvent.MOUSE_EVENT_MASK) != 0) {
                     viewPane.requestFocusInWindow();
                 }
-                splitDiffButton.setToolTipText(split ? "Unified View" : "Split View");
+                splitDiffButton.setToolTipText(split ? "Unified" : "Split");
             }
         });
-        splitDiffButton.setToolTipText("Split View");
+        splitDiffButton.setToolTipText("Split");
         // https://www.formdev.com/flatlaf/components/button/#styling
         splitDiffButton.putClientProperty("JButton.buttonType", "toolBarButton");
-        //menuBar.add(new JSeparator(SwingConstants.VERTICAL));
+        //toolBar.add(new JSeparator(SwingConstants.VERTICAL));
         menuBar.add(splitDiffButton);
 
         super.setJMenuBar(menuBar);
