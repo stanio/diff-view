@@ -122,7 +122,7 @@ class DiffOutlinePane extends JPanel {
             }
         });
         Action rightAction = actionMap.get(tree.getInputMap().get(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0)));
-        actionMap.put("scroll2-file", new AbstractAction() {
+        actionMap.put("scroll-to-file", new AbstractAction() {
             @Override public void actionPerformed(ActionEvent event) {
                 TreePath path = tree.getSelectionPath();
                 if (path == null) return;
@@ -139,7 +139,7 @@ class DiffOutlinePane extends JPanel {
         filterField.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0), "goto-tree");
         tree.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0), "goto-filter");
         tree.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "activate-node");
-        tree.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "scroll2-file");
+        tree.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, 0), "scroll-to-file");
 
         filterField.addFocusListener(new FocusAdapter() {
             @Override public void focusGained(FocusEvent event) {
@@ -178,7 +178,18 @@ class DiffOutlinePane extends JPanel {
             @Override public void changedUpdate(DocumentEvent e) {/* */}
         });
 
-        diffText.getDocument().addDocumentListener(new DiffFilesListener());
+        DiffFilesListener diffFilesListener = new DiffFilesListener();
+        diffText.getDocument().addDocumentListener(diffFilesListener);
+        diffText.addPropertyChangeListener("document", event -> {
+            Object oldValue = event.getOldValue();
+            if (oldValue instanceof Document) {
+                ((Document) oldValue).removeDocumentListener(diffFilesListener);
+            }
+            Object newValue = event.getNewValue();
+            if (newValue instanceof Document) {
+                ((Document) newValue).addDocumentListener(diffFilesListener);
+            }
+        });
 
         super.add(new JScrollPane(tree), BorderLayout.CENTER);
         super.add(filterField, BorderLayout.PAGE_START);
@@ -287,18 +298,23 @@ class DiffOutlinePane extends JPanel {
             Document source = event.getDocument();
             if (source instanceof AbstractDocument) {
                 AbstractDocument document = (AbstractDocument) source;
-                Element paragraph = document.getParagraphElement(event.getOffset());
-                Object path = paragraph.getAttributes().getAttribute(Attribute.FILE);
-                if (path instanceof String) {
-                    String oldPath = paths.get(paragraph);
-                    if (path.equals(oldPath)) return;
-
-                    if (oldPath != null) {
-                        fileTree.removePath(oldPath);
-                    }
-                    fileTree.addPath(path.toString());
-                    paths.put(paragraph, path.toString());
+                Element root = document.getDefaultRootElement();
+                for (int index = root.getElementIndex(event.getOffset()),
+                        count = root.getElementCount(); index < count; index++) {
+                    updateFileTree(root.getElement(index));
                 }
+            }
+        }
+
+        private void updateFileTree(Element paragraph) {
+            Object path = paragraph.getAttributes().getAttribute(Attribute.FILE);
+            if (path instanceof String) {
+                String oldPath = paths.get(paragraph);
+                if (path.equals(oldPath)) return;
+
+                if (oldPath != null) fileTree.removePath(oldPath);
+                fileTree.addPath(path.toString());
+                paths.put(paragraph, path.toString());
             }
         }
 

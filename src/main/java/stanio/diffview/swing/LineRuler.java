@@ -15,6 +15,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Caret;
+import javax.swing.text.DefaultCaret;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
@@ -72,6 +74,12 @@ public class LineRuler extends NowrapTextPane {
     public LineRuler(JTextComponent textComponent) {
         this();
         setTextComponent(textComponent);
+
+        // Prevent ruler from out-of-sync scrolling
+        addCaretListener(event -> {
+            if (getCaretPosition() > 0) setCaretPosition(0);
+        });
+
         resetUI();
     }
 
@@ -87,6 +95,11 @@ public class LineRuler extends NowrapTextPane {
         setEditable(false);
         setFocusable(false);
         putClientProperty("caretWidth", 0); // see DefaultCaret
+
+        Caret caret = getCaret();
+        if (caret instanceof DefaultCaret) {
+            ((DefaultCaret) caret).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        }
 
         Color bg = UIManager.getColor("Panel.background");
         if (bg != null) setBackground(bg);

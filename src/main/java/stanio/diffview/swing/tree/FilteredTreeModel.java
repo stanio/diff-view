@@ -174,15 +174,13 @@ public class FilteredTreeModel
                                    Consumer<TreePath> handler) {
         Trees.traceEvent(this, eventType, sourceEvent);
 
-        Trees.traceEvent(this, eventType, sourceEvent);
-
         TreePath sourcePath = sourceEvent.getTreePath();
         if (sourcePath == null) {
             setRoot(null); // Assume sourceStructureChanged
             return;
         }
 
-        TreePath ourPath = findOurPath(sourceEvent.getTreePath());
+        TreePath ourPath = findOurPath(sourcePath);
         if (ourPath == null) {
             // REVISIT: Find common ancestor, if any, and reload that;
             // Otherwise replace root.

@@ -123,13 +123,17 @@ class DiffTextPane extends JScrollPane {
                 leftGap == 0 ? inset : leftGap * getFontMetrics(f).charWidth('0'));
         StyleConstants.setRightIndent(defaultStyle, leftGap > 0 ? inset : 0);
 
-        diffPane.getDocument().addDocumentListener(
-                new DiffNumbersListener((AbstractDocument) numbers, lineAttr));
-
-        // Prevent ruler from automatic scroll
-        lineRuler.addCaretListener(event -> {
-            if (lineRuler.getCaretPosition() > 0)
-                lineRuler.setCaretPosition(0);
+        DiffNumbersListener diffNumbersListener = new DiffNumbersListener((AbstractDocument) numbers, lineAttr);
+        diffPane.getDocument().addDocumentListener(diffNumbersListener);
+        diffPane.addPropertyChangeListener("document", event -> {
+            Object oldValue = event.getOldValue();
+            if (oldValue instanceof Document) {
+                ((Document) oldValue).removeDocumentListener(diffNumbersListener);
+            }
+            Object newValue = event.getNewValue();
+            if (newValue instanceof Document) {
+                ((Document) newValue).addDocumentListener(diffNumbersListener);
+            }
         });
 
         DiffStyles.addTo(numbers);
@@ -298,6 +302,7 @@ class DiffTextPane extends JScrollPane {
             if (updateScheduled) {
                 return;
             }
+            updateScheduled = true;
             doc = (AbstractDocument) event.getDocument();
             SwingUtilities.invokeLater(() -> {
                 try {
@@ -306,22 +311,19 @@ class DiffTextPane extends JScrollPane {
                     e.printStackTrace();
                 }
             });
-            updateScheduled = true;
         }
 
         private synchronized void updateRuler() throws BadLocationException {
-            int lineCount = ruler.getDefaultRootElement().getElementCount();
-            int lineNo = doc.getDefaultRootElement().getElementIndex(end - 1);
-            for (int i = lineCount; i <= lineNo; i++) {
+            int rulerCount = ruler.getDefaultRootElement().getElementCount();
+            Element sourceRoot = doc.getDefaultRootElement();
+            int sourceEnd = sourceRoot.getElementIndex(end - 1);
+            for (int i = rulerCount; i <= sourceEnd; i++) {
                 ruler.insertString(ruler.getLength(), "\n", null);
             }
 
-            Element paragraph = doc.getParagraphElement(start);
-            while (paragraph.getEndOffset() < end) {
-                lineNo = paragraph.getParentElement()
-                                  .getElementIndex(paragraph.getStartOffset());
-                updateNumber(lineNo, paragraph);
-                paragraph = doc.getParagraphElement(paragraph.getEndOffset());
+            for (int i = sourceRoot.getElementIndex(start); i <= sourceEnd; i++) {
+                Element paragraph = sourceRoot.getElement(i);
+                updateNumber(i, paragraph);
             }
             start = -1;
             end = -1;

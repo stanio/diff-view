@@ -4,9 +4,20 @@
  */
 package stanio.diffview.udiff;
 
+import static stanio.diffview.udiff.UDiffEditorKit.udiffStyles;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.Style;
 import javax.swing.text.StyleContext;
+import stanio.diffview.swing.text.DocumentSegment;
+import stanio.diffview.udiff.ParseResult.Type;
 
 /**
  * Should ideally express the following structure:
@@ -95,8 +106,125 @@ public class UDiffDocument extends DefaultStyledDocument {
     }
 
     @Override
+    public void insertString(int offs, String str, AttributeSet a)
+            throws BadLocationException {
+        checkParseThread();
+        super.insertString(offs, str, a);
+    }
+
+    @Override
+    public void remove(int offs, int len) throws BadLocationException {
+        checkParseThread();
+        super.remove(offs, len);
+    }
+
+    @Override
+    public void replace(int offset, int length, String text, AttributeSet attrs)
+            throws BadLocationException {
+        checkParseThread();
+        super.replace(offset, length, text, attrs);
+    }
+
+    private void checkParseThread() {
+        Thread th = parseThread;
+        if (th == null || th == Thread.currentThread())
+            return;
+
+        throw new IllegalStateException("Ongoing parsing in another thread");
+    }
+
+    private volatile Thread parseThread;
+    private UDiffParser readParser;
+
+    void setReadParser(UDiffParser parser) {
+        this.readParser = parser;
+        if (parser == null) {
+            parseThread = null;
+            lineNumbers = null;
+            last = null;
+        } else {
+            parseThread = Thread.currentThread();
+            lineNumbers = new HashMap<>();
+        }
+    }
+
+    @Override
     protected void insertUpdate(DefaultDocumentEvent chng, AttributeSet attr) {
         super.insertUpdate(chng, attr);
+        UDiffParser parser = readParser;
+        if (parser == null) return;
+
+        DocumentSegment text = new DocumentSegment(this);
+        Element root = getDefaultRootElement();
+        int end = chng.getOffset() + chng.getLength();
+        for (int i = root.getElementIndex(chng.getOffset()),
+                count = root.getElementCount(); i < count; i++) {
+            Element paragraph = root.getElement(i);
+            if (paragraph.getStartOffset() >= end)
+                break;
+
+            text.update(paragraph.getStartOffset(),
+                    Math.min(paragraph.getEndOffset(), end));
+            if (text.charAt(text.length() - 1) != '\n')
+                break;
+
+            updateLine(paragraph, parser, text, chng);
+        }
+
+    }
+
+    private Map<Integer, String> lineNumbers;
+    private Element last;
+
+    private void updateLine(Element paragraph,
+                            UDiffParser parser,
+                            DocumentSegment line,
+                            DefaultDocumentEvent change) {
+        parser.update(line);
+
+        Type lineType = parser.getType();
+        setLogicalStyle(paragraph, lineType);
+        if (lineType == Type.HUNK) {
+            Style hunkLabel = getStyle(StyleName.HUNK_LABEL);
+            int labelStart = paragraph.getStartOffset() + parser.getTermEnd();
+            buffer.change(labelStart, paragraph.getEndOffset() - labelStart, change);
+            MutableAttributeSet attrs = (MutableAttributeSet)
+                    paragraph.getElement(paragraph.getElementIndex(labelStart));
+            attrs.addAttributes(hunkLabel);
+        } else if (lineType == Type.FROM_FILE) {
+            String file = line.substring(parser.getTermStart(), parser.getTermEnd());
+            if (!file.startsWith("/dev/null")) {
+                MutableAttributeSet a = (MutableAttributeSet) paragraph.getAttributes();
+                a.addAttribute(Attribute.FILE, file.replaceFirst("^a/", ""));
+            }
+        } else if (lineType == Type.TO_FILE) {
+            String file = line.substring(parser.getTermStart(), parser.getTermEnd());
+            if (!file.startsWith("/dev/null")) {
+                MutableAttributeSet a = (MutableAttributeSet) last.getAttributes();
+                a.addAttribute(Attribute.FILE, file.replaceFirst("^b/", ""));
+            }
+        } else if (lineType == Type.CONTEXT
+                || lineType == Type.ADDED
+                || lineType == Type.REMOVED) {
+            String fromLine = lineNumbers.computeIfAbsent(parser.getFromLine(), Object::toString);
+            String toLine = lineNumbers.computeIfAbsent(parser.getToLine(), Object::toString);
+
+            MutableAttributeSet attrs = (MutableAttributeSet) paragraph.getAttributes();
+            if (lineType != Type.ADDED) {
+                attrs.addAttribute(Attribute.FROM_LINE, fromLine);
+            }
+            if (lineType != Type.REMOVED) {
+                attrs.addAttribute(Attribute.TO_LINE, toLine);
+            }
+        }
+        last = paragraph;
+    }
+
+    private void setLogicalStyle(Element paragraph, Type lineType) {
+        String name = udiffStyles.get(lineType);
+        Style style = (name == null) ? null : getStyle(name);
+        if (style == null) style = getStyle(StyleContext.DEFAULT_STYLE);
+        ((AbstractElement) paragraph).setResolveParent(style);
     }
 
 }

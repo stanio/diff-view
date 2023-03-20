@@ -12,19 +12,19 @@ import javax.swing.text.Document;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class DocumentCharSequenceTest {
+public class DocumentSegmentCharSequenceTest {
 
     private static final String
             BASE_CONTENT = "Sugar doppio that, ut, extra\n"
                            + "aged coffee aromatic bar.";
 
-    private DocumentCharSequence charSequence;
+    private DocumentSegment charSequence;
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
         Document doc = new DefaultStyledDocument();
         doc.insertString(0, BASE_CONTENT, null);
-        charSequence = DocumentCharSequence.of(doc);
+        charSequence = new DocumentSegment(doc);
     }
 
     @Test
