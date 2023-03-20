@@ -92,6 +92,10 @@ public class UDiffDocument extends DefaultStyledDocument {
         this(DiffStyles.getDefault());
     }
 
+    public UDiffDocument(Content c) {
+        this(c, DiffStyles.getDefault());
+    }
+
     public UDiffDocument(StyleContext styles) {
         super(styles);
     }

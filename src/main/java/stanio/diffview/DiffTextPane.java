@@ -34,11 +34,13 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.text.AbstractDocument;
+import javax.swing.text.AbstractDocument.Content;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 import javax.swing.text.Element;
+import javax.swing.text.GapContent;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -49,6 +51,7 @@ import stanio.diffview.swing.LineRuler;
 import stanio.diffview.swing.NowrapTextPane;
 import stanio.diffview.swing.text.BoxBackgroundFactory;
 import stanio.diffview.udiff.DiffStyles;
+import stanio.diffview.udiff.UDiffDocument;
 import stanio.diffview.udiff.UDiffDocument.Attribute;
 import stanio.diffview.udiff.UDiffDocument.StyleName;
 import stanio.diffview.udiff.UDiffEditorKit;
@@ -161,7 +164,9 @@ class DiffTextPane extends JScrollPane {
         }
 
         EditorKit kit = diffPane.getEditorKit();
-        Document doc = diffPane.getDocument();
+        Content content = new GapContent(input.contentLength > 0 ? input.contentLength : 32 * 1024);
+        Document doc = new UDiffDocument(content);
+        diffPane.setDocument(doc);
         if (input.url != null) {
             doc.putProperty(Document.StreamDescriptionProperty, input.url);
         } else if (input.file != null) {

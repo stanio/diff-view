@@ -317,7 +317,8 @@ public class DiffView extends JFrame {
         try {
             if (args.length == 0 && System.console() == null) {
                 return new Input(fileEncoding(), new BufferedReader(
-                        new InputStreamReader(System.in, fileEncoding())));
+                        new InputStreamReader(System.in, fileEncoding())),
+                        Math.max(System.in.available(), 32 * 1024));
             } else if (args.length == 1) {
                     return openStream(args[0]);
             }
@@ -338,12 +339,15 @@ public class DiffView extends JFrame {
             URL url = new URI(source).toURL();
             URLConnection con = url.openConnection();
             Charset charset = getContentCharset(con);
+            con.getContentLength();
             return new Input(url, charset, new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), charset)));
+                    new InputStreamReader(con.getInputStream(), charset)),
+                    con.getContentLength());
         } catch (URISyntaxException | IllegalArgumentException | MalformedURLException e) {
             Path file = Paths.get(source);
             return new Input(file, fileEncoding(),
-                    Files.newBufferedReader(file, fileEncoding()));
+                    Files.newBufferedReader(file, fileEncoding()),
+                    (int) Files.size(file));
         }
     }
 
@@ -369,22 +373,24 @@ public class DiffView extends JFrame {
         URL url;
         Charset charset;
         Reader stream;
+        int contentLength = -1;
 
-        Input(Charset charset, Reader stream) throws IOException {
+        Input(Charset charset, Reader stream, int contentLength) throws IOException {
             this.charset = charset;
             this.stream = stream;
             // Try to detect some errors early
             stream.mark(4096);
+            stream.skip(1024);
             stream.reset();
         }
 
-        Input(Path file, Charset charset, Reader stream) throws IOException {
-            this(charset, stream);
+        Input(Path file, Charset charset, Reader stream, int contentLength) throws IOException {
+            this(charset, stream, contentLength);
             this.file = file;
         }
 
-        Input(URL url, Charset charset, Reader stream) throws IOException {
-            this(charset, stream);
+        Input(URL url, Charset charset, Reader stream, int contentLength) throws IOException {
+            this(charset, stream, contentLength);
             this.url = url;
         }
 
